@@ -2,37 +2,93 @@ import Room from "../models/room.js";
 import { uploadToB2, getSignedUrlFromB2 } from "../utils/b2.js";
 import { v4 as uuidv4 } from "uuid";
 
+// export const createRoom = async (req, res) => {
+//   try {
+//     const { title, description, rent, type, address } = req.body;
+
+//     const uploadedImages = await Promise.all(
+//       (req.files || []).map(async (file) => {
+//         const key = `rooms/${uuidv4()}-${file.originalname}`;
+//         await uploadToB2({
+//           key,
+//           body: file.buffer,
+//           contentType: file.mimetype,
+//         });
+//         return key; 
+//       })
+//     );
+
+//     const room = new Room({
+//       title,
+//       description,
+//       rent,
+//       type,
+//       address,
+//       location: {
+//         type: "Point",
+//         coordinates: [lng, lat],
+//       },
+//       images: uploadedImages, 
+//       postedBy: req.user?._id,
+//     });
+
+//     await room.save();
+//     res.status(201).json(room);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Error creating room", error });
+//   }
+// };
+
 export const createRoom = async (req, res) => {
   try {
-    const { title, description, rent, type, lat, lng, address } = req.body;
+    const {
+      title,
+      description,
+      price,
+      status,
+      services,
+      address,
+      lat,
+      lng,
+    } = req.body; 
 
+    // parse services if needed
+    const parsedServices =
+      typeof services === "string" ? JSON.parse(services) : services;
+
+    // upload images
     const uploadedImages = await Promise.all(
       (req.files || []).map(async (file) => {
         const key = `rooms/${uuidv4()}-${file.originalname}`;
+
         await uploadToB2({
           key,
           body: file.buffer,
           contentType: file.mimetype,
         });
-        return key; 
+
+        return key;
       })
     );
 
     const room = new Room({
       title,
       description,
-      rent,
-      type,
+      price,          // ✅ correct
+      status,         // ✅ correct
+      services: parsedServices,
       address,
       location: {
         type: "Point",
-        coordinates: [lng, lat],
+        coordinates: [lng, lat], // optional if not required
       },
-      images: uploadedImages, 
+      image: uploadedImages,
       postedBy: req.user?._id,
     });
 
     await room.save();
+
     res.status(201).json(room);
   } catch (error) {
     console.error(error);
@@ -40,35 +96,24 @@ export const createRoom = async (req, res) => {
   }
 };
 
-export const getRooms = async (req, res) => {
+
+export const getRoom = async (req, res) => {
   try {
-    const { lat, lng, radius = 5000 } = req.query;
-    let query = {};
+    const room = await Room.find();
+    if (!room) return res.status(404).json({ message: "Room not found" });
 
-    if (lat && lng) {
-      query.location = {
-        $near: {
-          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseInt(radius),
-        },
-      };
-    }
-
-    const rooms = await Room.find(query).sort({ createdAt: -1 });
-
-    const roomsWithUrls = await Promise.all(
-      rooms.map(async (room) => {
-        const signedUrls = await Promise.all(
-          (room.images || []).map((key) => getSignedUrlFromB2(key))
-        );
-        return { ...room.toObject(), images: signedUrls };
-      })
+    const signedUrls = await Promise.all(
+      (room.images || []).map((key) => getSignedUrlFromB2(key))
     );
 
-    res.json(roomsWithUrls);
+    res.status(200).json({
+      success:"true",
+      message:"room find ",
+      room
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error fetching rooms", error });
+    res.status(500).json({ message: "Error fetching room", error });
   }
 };
 
@@ -98,3 +143,4 @@ export const deleteRoom = async (req, res) => {
     res.status(500).json({ message: "Error deleting room", error });
   }
 };
+ 

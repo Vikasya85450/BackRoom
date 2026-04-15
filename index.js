@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import 'dotenv/config';
+
+import dotenv from "dotenv";
+dotenv.config();
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
@@ -9,7 +11,7 @@ import morgan from 'morgan';
 import { fileURLToPath } from 'url';
 import Dbconnect from './src/config/dbConnect.js';
 import ErrorHandler, { errorMiddleware } from './src/utils/error.js';
-import redis from "./src/config/redis.js";
+import redis from './src/config/redis.js';
 import userRouter from './src/routes/userRouter.js'
 import roomRouter from './src/routes/roomRouter.js'
 const __filename = fileURLToPath(import.meta.url);

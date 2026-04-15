@@ -33,5 +33,14 @@
     "resend": "^6.0.3",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gurusharan-Singh2/Room_Sathi_Backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Gurusharan-Singh2/Room_Sathi_Backend/issues"
+  },
+  "homepage": "https://github.com/Gurusharan-Singh2/Room_Sathi_Backend#readme"
 }
