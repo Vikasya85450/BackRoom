@@ -1,12 +1,30 @@
 import express from "express";
-import { upload } from "../utils/b2.js";
-import { createRoom, getRoom } from '../controller/roomController.js'
+import {
+
+  getRoom,
+  getRoomById,
+  deleteRoom,
+  addroom,
+  searchroom,
+} from "../controller/roomController.js";
+
+import uploadFile from "../utils/multer.js";
 
 const router = express.Router();
 
-router.post("/", upload.array("images", 5), createRoom);
-router.get("/", getRoom);
+
+router.post("/room", uploadFile.single("image"), addroom);
+
+// ================= READ =================
+// get all rooms
+router.get("/rooms",searchroom);
+router.get("/room", getRoom);
+
+// get single room
 // router.get("/:id", getRoomById);
-// router.delete("/:id", deleteRoom);
+
+
+// ================= DELETE =================
+router.delete("/:id", deleteRoom);
 
 export default router;

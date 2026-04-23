@@ -1,146 +1,240 @@
+import { v2 as cloudinary } from "cloudinary";
+import { getDataUrl } from "../utils/buffer.js";
 import Room from "../models/room.js";
-import { uploadToB2, getSignedUrlFromB2 } from "../utils/b2.js";
-import { v4 as uuidv4 } from "uuid";
+import mongoose from "mongoose";
 
-// export const createRoom = async (req, res) => {
-//   try {
-//     const { title, description, rent, type, address } = req.body;
 
-//     const uploadedImages = await Promise.all(
-//       (req.files || []).map(async (file) => {
-//         const key = `rooms/${uuidv4()}-${file.originalname}`;
-//         await uploadToB2({
-//           key,
-//           body: file.buffer,
-//           contentType: file.mimetype,
-//         });
-//         return key; 
-//       })
-//     );
-
-//     const room = new Room({
-//       title,
-//       description,
-//       rent,
-//       type,
-//       address,
-//       location: {
-//         type: "Point",
-//         coordinates: [lng, lat],
-//       },
-//       images: uploadedImages, 
-//       postedBy: req.user?._id,
-//     });
-
-//     await room.save();
-//     res.status(201).json(room);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Error creating room", error });
-//   }
-// };
-
-export const createRoom = async (req, res) => {
+export const addroom = async (req, res) => {
   try {
-    const {
+    const { title, description, price, status, address } = req.body;
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    // ✅ parse services (bulletproof)
+    let services = [];
+
+    if (req.body.services) {
+      if (typeof req.body.services === "string") {
+        try {
+          services = JSON.parse(req.body.services);
+        } catch {
+          services = [];
+        }
+      } else if (Array.isArray(req.body.services)) {
+        services = req.body.services;
+      }
+    }
+
+    console.log("FINAL SERVICES:", services);
+
+    // validation
+    if (!title || !description || !price || !status || !address) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image is required"
+      });
+    }
+
+    const fileBuffer = getDataUrl(req.file);
+
+    const cloud = await cloudinary.uploader.upload(fileBuffer.content, {
+      folder: "Rooms"
+    });
+
+    const result = await Room.create({
       title,
       description,
       price,
       status,
-      services,
       address,
-      lat,
-      lng,
-    } = req.body; 
-
-    // parse services if needed
-    const parsedServices =
-      typeof services === "string" ? JSON.parse(services) : services;
-
-    // upload images
-    const uploadedImages = await Promise.all(
-      (req.files || []).map(async (file) => {
-        const key = `rooms/${uuidv4()}-${file.originalname}`;
-
-        await uploadToB2({
-          key,
-          body: file.buffer,
-          contentType: file.mimetype,
-        });
-
-        return key;
-      })
-    );
-
-    const room = new Room({
-      title,
-      description,
-      price,          // ✅ correct
-      status,         // ✅ correct
-      services: parsedServices,
-      address,
-      location: {
-        type: "Point",
-        coordinates: [lng, lat], // optional if not required
-      },
-      image: uploadedImages,
-      postedBy: req.user?._id,
+      services, // ✅ now always correct
+      image: cloud.secure_url,
+      image_id: cloud.public_id,
     });
 
-    await room.save();
+    res.status(201).json({
+      success: true,
+      message: "Room Created !!!",
+      result
+    });
 
-    res.status(201).json(room);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating room", error });
+    console.error("add room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };
 
-
 export const getRoom = async (req, res) => {
   try {
-    const room = await Room.find();
-    if (!room) return res.status(404).json({ message: "Room not found" });
+    const rooms = await Room.find()
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const signedUrls = await Promise.all(
-      (room.images || []).map((key) => getSignedUrlFromB2(key))
-    );
+    // ✅ Fix old data (if services stored as string earlier)
+    const formattedRooms = rooms.map((room) => {
+      let services = [];
 
-    res.status(200).json({
-      success:"true",
-      message:"room find ",
-      room
+      if (room.services) {
+        if (Array.isArray(room.services)) {
+          services = room.services;
+        } else if (typeof room.services === "string") {
+          try {
+            services = JSON.parse(room.services);
+          } catch {
+            services = [];
+          }
+        }
+      }
+
+      return {
+        ...room,
+        services, // ✅ always array now
+      };
     });
+
+    return res.status(200).json({
+      success: true,
+      message: "Rooms fetched successfully",
+      rooms: formattedRooms,
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching room", error });
+    console.error("getRoom error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching rooms",
+    });
   }
 };
 
 export const getRoomById = async (req, res) => {
   try {
-    const room = await Room.findById(req.params.id);
-    if (!room) return res.status(404).json({ message: "Room not found" });
+    const { id } = req.params;
 
-    const signedUrls = await Promise.all(
-      (room.images || []).map((key) => getSignedUrlFromB2(key))
-    );
+    // 🔴 Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid room ID"
+      });
+    }
 
-    res.json({ ...room.toObject(), images: signedUrls });
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      room
+    });
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error fetching room", error });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching room"
+    });
   }
 };
 
-// 🗑️ Delete Room
+
+
+// ================= DELETE ROOM =================
 export const deleteRoom = async (req, res) => {
   try {
-    await Room.findByIdAndDelete(req.params.id);
-    res.json({ message: "Room deleted" });
+    const { id } = req.params;
+
+    // 🔴 Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid room ID"
+      });
+    }
+
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found"
+      });
+    }
+
+    // 🧹 Delete images from Cloudinary
+    if (room.image && room.image.length > 0) {
+      for (const img of room.image) {
+        if (img.public_id) {
+          await cloudinary.uploader.destroy(img.public_id);
+        }
+      }
+    }
+
+    await Room.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Room deleted successfully"
+    });
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error deleting room", error });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting room"
+    });
   }
 };
- 
+
+
+
+export const searchroom = async (req, res) => {
+  try {
+    const { address, area, status } = req.query;
+
+    let query = {};
+
+    // 🔍 Combine address + area into one search
+    if (address || area) {
+      const searchText = `${address || ""} ${area || ""}`.trim();
+
+      query.address = {
+        $regex: searchText,
+        $options: "i",
+      };
+    }
+
+    // 🔍 Status exact match
+    if (status) {
+      query.status = {
+        $regex: `^${status}$`,
+        $options: "i",
+      };
+    }
+
+    const rooms = await Room.find(query);
+
+    res.status(200).json(rooms);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching rooms",
+      error: error.message,
+    });
+  }
+};

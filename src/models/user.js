@@ -11,10 +11,14 @@ const userSchema = new mongoose.Schema({
     require:true,
     unique:true
   },
-  image:{
-    type:String,
-    require:true
-  },
+ image: {
+        type: String,
+        required: true
+    },
+    image_id: {
+        type: String,
+        required: true
+    },
  email:{
     type:String,
     require:true,

@@ -11,11 +11,16 @@ import morgan from 'morgan';
 import { fileURLToPath } from 'url';
 import Dbconnect from './src/config/dbConnect.js';
 import ErrorHandler, { errorMiddleware } from './src/utils/error.js';
-import redis from './src/config/redis.js';
+import { v2 as cloudinary } from "cloudinary";
+
 import userRouter from './src/routes/userRouter.js'
 import roomRouter from './src/routes/roomRouter.js'
+import roommateRouter from './src/routes/roommate.js'
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 
 
 
@@ -40,7 +45,7 @@ app.use(
 );
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false}));
 app.use(cookieParser());
 
 
@@ -48,16 +53,23 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 Dbconnect();
 
+cloudinary.config({
+    cloud_name:process.env.CLOUD_NAME,
+    api_key:process.env.API_KEY,
+    api_secret:process.env.API_SECRET
+})
+
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'Success' });
 });
-
+console.log("ENV:", process.env.CLOUD_NAME, process.env.API_KEY);
 
 app.get('/test-error', (req, res, next) => {
   next(new ErrorHandler('Forced test error', 418));
 });
 app.use('/api/user',userRouter)
-app.use('/api/room',roomRouter)
+app.use('/api',roomRouter)
+app.use('/api',roommateRouter)
 
 
 app.use(errorMiddleware);

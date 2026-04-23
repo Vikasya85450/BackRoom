@@ -23,30 +23,33 @@ const roomSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-
-    image: {
-      type: [String], // ✅ multiple images
-      default: [],
-    },
-
-    location: {
-      type: {
+image: {
         type: String,
-        enum: ["Point"],
-        default: "Point",
-      },
-      coordinates: {
-        type: [Number],
-        // required: true,
-      },
+        required: true
     },
+    image_id: {
+        type: String,
+        // required: true
+    },
+
+    // location: {
+    //   type: {
+    //     type: String,
+    //     enum: ["Point"],
+    //     default: "Point",
+    //   },
+    //   coordinates: {
+    //     type: [Number],
+    //     // required: true,
+    //   },
+    // },
 
     address: String,
 
-    postedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+    // postedBy: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "User",
+    // },
   },
   { timestamps: true }
 );
