@@ -16,6 +16,7 @@ import { v2 as cloudinary } from "cloudinary";
 import userRouter from './src/routes/userRouter.js'
 import roomRouter from './src/routes/roomRouter.js'
 import roommateRouter from './src/routes/roommate.js'
+import { smartChat } from './src/controller/chatcontroller.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,6 +71,7 @@ app.get('/test-error', (req, res, next) => {
 app.use('/api/user',userRouter)
 app.use('/api',roomRouter)
 app.use('/api',roommateRouter)
+app.post("/api/chat", smartChat);
 
 
 app.use(errorMiddleware);

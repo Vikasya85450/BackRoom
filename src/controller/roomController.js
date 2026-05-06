@@ -6,12 +6,11 @@ import mongoose from "mongoose";
 
 export const addroom = async (req, res) => {
   try {
-    const { title, description, price, status, address } = req.body;
+    const { title, description, price, status, address, phone } = req.body;
 
     console.log("BODY:", req.body);
     console.log("FILE:", req.file);
 
-    // ✅ parse services (bulletproof)
     let services = [];
 
     if (req.body.services) {
@@ -26,10 +25,8 @@ export const addroom = async (req, res) => {
       }
     }
 
-    console.log("FINAL SERVICES:", services);
-
-    // validation
-    if (!title || !description || !price || !status || !address) {
+    // ✅ validation
+    if (!title || !description || !price || !status || !address || !phone) {
       return res.status(400).json({
         success: false,
         message: "All fields are required"
@@ -55,7 +52,8 @@ export const addroom = async (req, res) => {
       price,
       status,
       address,
-      services, // ✅ now always correct
+      phone, // ✅ save number
+      services,
       image: cloud.secure_url,
       image_id: cloud.public_id,
     });

@@ -18,11 +18,8 @@ router.post("/room", uploadFile.single("image"), addroom);
 // ================= READ =================
 // get all rooms
 router.get("/rooms",searchroom);
-router.get("/room", getRoom);
 
-// get single room
-// router.get("/:id", getRoomById);
-
+router.get("/room", getRoom)
 
 // ================= DELETE =================
 router.delete("/:id", deleteRoom);

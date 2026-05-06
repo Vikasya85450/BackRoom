@@ -16,9 +16,11 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.883.0",
     "@aws-sdk/s3-request-presigner": "^3.883.0",
+    "@google/genai": "^1.50.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.9.0",
+    "compromise": "^14.15.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "datauri": "^4.1.0",
@@ -33,6 +35,7 @@
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
     "resend": "^6.0.3",
+    "string-similarity": "^4.0.4",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1"
   },

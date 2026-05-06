@@ -23,17 +23,13 @@ import mongoose from "mongoose";
 // ================= REGISTER =================
 export const registerUser = catchAsyncError(async (req, res, next) => {
   const { username, email, password } = req.body;
-
   if (!username || !email || !password) {
     return next(new ErrorHandler("All fields are required", 400));
   }
-
   const existingUser = await User.findOne({ email });
-
   if (existingUser) {
     return next(new ErrorHandler("User already exists", 400));
   }
-
   await checkOtpRestrictions(email);
   await trackOtpRequests(email);
   await sendOtpByEmail(username, email);

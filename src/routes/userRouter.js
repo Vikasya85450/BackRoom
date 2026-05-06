@@ -25,6 +25,8 @@ router.post("/verify-otp", uploadFile.single("image"), verifyOtp);
 // Login
 router.post("/login", loginWithPassword);
 
+
+
 // ================= PASSWORD =================
 
 // Forgot password
